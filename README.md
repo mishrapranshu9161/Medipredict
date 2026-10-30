@@ -1,170 +1,142 @@
-# MediPredict — Hospital Management & Disease Risk Prediction System
+<div align="center">
 
-**MediPredict** is an enterprise-grade, production-style MERN stack (MongoDB, Express.js, React + Vite, Node.js) web application projects. It integrates outpatient clinic workflows, electronic health records (EHR), automated appointment scheduling with double-booking prevention, digital printable prescriptions, laboratory test report tracking, and a modular educational disease risk prediction engine.
+# 🏥 MediPredict
 
----
+### Hospital management system with role-based portals and symptom risk assessment
 
-## 🌟 Key Features
+![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=flat-square&logo=mongodb&logoColor=white)
+![Express](https://img.shields.io/badge/Express-000000?style=flat-square&logo=express&logoColor=white)
+![React](https://img.shields.io/badge/React-61DAFB?style=flat-square&logo=react&logoColor=black)
+![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat-square&logo=nodedotjs&logoColor=white)
+![JWT](https://img.shields.io/badge/Auth-JWT-000000?style=flat-square&logo=jsonwebtokens&logoColor=white)
 
-### 👤 Role-Based Access Control (RBAC)
-- **Patient Portal**: Profile management (allergies, DOB, emergency contacts, medical documents), doctor search & department filtering, appointment booking with visual slot availability, digital prescription viewing & printing, lab report downloads, educational symptom checker, and in-app notifications.
-- **Doctor Portal**: Daily appointment queue, status workflow (Accept, Reject, Confirm, Mark Completed), patient clinical directory, EHR vitals entry (BP, HR, Temp, Weight, Height with auto-computed BMI), digital prescription generator, and lab test order requests.
-- **Admin Dashboard**: Executive analytics (Recharts charts for monthly trends, department distribution, and appointment status ratios), full user management, doctor onboarding & schedule management, department catalog, pharmacy inventory management, disease & symptom knowledge base manager, and lab report publishing.
+<!-- TODO: uncomment after deployment
+[🚀 **Live Demo**](https://YOUR-DEMO-URL) · -->
+[✨ Features](#-features) · [🏗️ Architecture](#️-architecture) · [⚙️ Quick Start](#️-quick-start) · [🔐 Security](#-security)
 
-### 🧠 Educational Disease Risk Prediction Engine
-- **Modular Architecture**: Isolated in `server/services/predictionService.js` to allow seamless future replacement with Python Machine Learning models (Scikit-Learn, PyTorch, FastAPI).
-- **Weighted Rule & Scoring Algorithm**: Evaluates patient symptom inputs against symptom severity and disease knowledge bases. Calculates condition risk scores \(0.0 - 0.95\), matched symptoms, and clinical advice.
-- **Decision-Support Disclaimer**: Displays mandatory warning: *"This prediction is for educational and decision-support purposes only and is not a medical diagnosis. Consult a qualified healthcare professional for medical advice."*
+</div>
 
-### 🗓️ Double-Booking Prevention Engine
-- Server-side validation enforcing that no doctor can be double-booked for the same date and time slot unless previous bookings were cancelled or rejected.
-
-### 🖨️ Printable Digital Prescription (Rx)
-- Dedicated print layout (`/prescriptions/:id/print`) featuring hospital branding, doctor credentials, patient demographics, vitals, itemized dosage instructions table, doctor advice, and browser print trigger (`window.print()`).
+<!-- TODO: add a dashboard screenshot or GIF
+<p align="center"><img src="docs/screenshots/dashboard.png" alt="MediPredict dashboard" width="90%"></p>
+-->
 
 ---
 
-## 🛠️ Technology Stack
+## 💡 Overview
+
+MediPredict is a full-stack MERN application that digitises the core hospital workflow: patients book appointments, doctors manage consultations and prescriptions, and admins monitor the system through analytics.
+
+## ✨ Features
+
+| Role | What they can do |
+|---|---|
+| 🧑‍⚕️ **Patient** | Register, book appointments, view prescriptions and lab reports, run a symptom risk assessment |
+| 👨‍⚕️ **Doctor** | Manage appointments, write prescriptions, add medical records |
+| 🛠️ **Admin** | Manage users, doctors and departments, view analytics (Recharts) |
+
+**Highlights**
+- 🗓️ **Double-booking prevention** — server-side validation backed by a compound index on doctor, date and time slot
+- 🖨️ **Printable digital prescriptions** and lab report tracking
+- 🔐 **Role-based access control** across all routes
+- 📈 **Admin analytics dashboard**
+
+### 🧠 About the risk assessment engine
+
+The symptom engine is **rule-based weighted scoring** (risk range 0.0–0.95), not a trained ML model. It is built as a separate service layer so a Python ML model can replace it without changing the API.
+
+## 🏗️ Architecture
+
+```mermaid
+flowchart LR
+    C["React client"] -->|REST + JWT| S["Express API"]
+    S --> MW["Auth, RBAC, validation, rate limit"]
+    MW --> CT["Controllers"]
+    CT --> SV["Services (risk engine)"]
+    CT --> DB[("MongoDB")]
+```
+
+```mermaid
+erDiagram
+    USER ||--o| PATIENT : extends
+    USER ||--o| DOCTOR : extends
+    DEPARTMENT ||--o{ DOCTOR : has
+    PATIENT ||--o{ APPOINTMENT : books
+    DOCTOR ||--o{ APPOINTMENT : attends
+    DEPARTMENT ||--o{ APPOINTMENT : "routes to"
+    PATIENT ||--o{ MEDICAL_RECORD : has
+    DOCTOR ||--o{ MEDICAL_RECORD : writes
+    PATIENT ||--o{ PRESCRIPTION : receives
+    DOCTOR ||--o{ PRESCRIPTION : issues
+```
+
+_Diagram shows the core entities; the project defines 14 Mongoose models in total._
+
+## 🧰 Tech Stack
 
 | Layer | Technology |
-| :--- | :--- |
-| **Frontend Framework** | React 18 with Vite |
-| **Styling & UI** | Tailwind CSS v4, Lucide React Icons |
-| **Data Visualization** | Recharts (Bar Charts, Pie Charts) |
-| **API Client** | Axios (configured with Request Bearer Interceptor & Global Error Handler) |
-| **Backend Framework** | Node.js with Express.js |
-| **Database & ORM** | MongoDB with Mongoose Schema Models |
-| **Security & Auth** | JWT (JSON Web Tokens), Bcryptjs Password Hashing, Helmet, CORS, Express Rate Limit |
-| **File Storage** | Multer with Cloudinary integration & automatic Local Disk Fallback (`/uploads`) |
+|---|---|
+| Frontend | React, Recharts |
+| Backend | Node.js, Express |
+| Database | MongoDB (Mongoose) |
+| Auth & Security | JWT, bcrypt, Helmet, rate limiting |
 
----
+## ⚙️ Quick Start
 
-## 📂 Project Folder Structure
-
-```
-medipredict/
-├── server/
-│   ├── config/
-│   │   ├── db.js                 # MongoDB connection logic
-│   │   └── cloudinary.js         # Multer file upload storage + fallback
-│   ├── controllers/              # REST API controller handlers
-│   │   ├── adminController.js
-│   │   ├── appointmentController.js
-│   │   ├── authController.js
-│   │   ├── departmentController.js
-│   │   ├── diseaseSymptomController.js
-│   │   ├── doctorController.js
-│   │   ├── labController.js
-│   │   ├── medicalRecordController.js
-│   │   ├── medicineController.js
-│   │   ├── patientController.js
-│   │   ├── predictionController.js
-│   │   ├── prescriptionController.js
-│   │   └── userController.js
-│   ├── middleware/               # Auth verification, role authorization, error handling
-│   ├── models/                   # 14 Mongoose Data Schemas
-│   ├── routes/                   # Express REST route endpoints
-│   ├── seed/                     # Seed data script (`seedData.js`)
-│   ├── services/                 # Prediction service & notification engine
-│   ├── utils/                    # JWT generator & API response formatters
-│   ├── .env.example
-│   ├── package.json
-│   └── server.js                 # Express server application entry point
-└── client/
-    ├── public/
-    ├── src/
-    │   ├── components/           # Navbar, Sidebar, Footer, Modals, Badges, Charts, Spinners
-    │   ├── context/              # AuthContext & NotificationContext
-    │   ├── layouts/              # DashboardLayout & PublicLayout
-    │   ├── pages/                # Landing, Auth, Patient, Doctor, Admin pages & Print view
-    │   ├── services/             # Axios API client endpoints (`api.js`)
-    │   ├── App.jsx               # React Router routes
-    │   ├── index.css             # Tailwind imports & print styling
-    │   └── main.jsx              # React app mounting
-    ├── index.html
-    ├── tailwind.config.js
-    ├── vite.config.js
-    └── package.json
-```
-
----
-
-## ⚡ Quick Start & Installation
-
-### 1. Prerequisites
-- **Node.js**: v18.0.0 or higher
-- **MongoDB**: Local MongoDB Community Edition (`mongodb://127.0.0.1:27017`) or MongoDB Atlas URI.
-
----
-
-### 2. Backend Setup
 ```bash
-cd server
+# 1. Clone
+git clone https://github.com/mishrapranshu9161/Medipredict.git
+cd Medipredict
 
-# Install backend dependencies
+# 2. Backend
+cd backend
 npm install
-
-# Create environment file
-cp .env.example .env
-
-# Seed MongoDB database with demo dataset (Admin, Doctors, Patients, Departments, Medicines)
-npm run seed
-
-# Start development server
+cp .env.example .env      # then fill in your values
 npm run dev
-```
-*Server will start running at `http://localhost:5000`*
 
----
-
-### 3. Frontend Setup
-```bash
-cd client
-
-# Install frontend dependencies
+# 3. Frontend (new terminal)
+cd frontend
 npm install
-
-# Start Vite React development server
-npm run dev
+npm start
 ```
-*Frontend will start running at `http://localhost:5173`*
 
----
+<!-- VERIFY: folder names, .env.example, and start commands must match your repo -->
 
-## 🔑 Demo Login Credentials
+<details>
+<summary><b>🔑 Demo accounts</b> (seed data only)</summary>
 
-The login page (`/login`) includes **1-Click Quick Demo Login Buttons** for instant evaluation:
+<br/>
 
-| Role | Email | Password | Access Level |
-| :--- | :--- | :--- | :--- |
-| **System Admin** | `admin@medipredict.com` | `Admin@12345` | Complete system management, user control, analytics, department/pharmacy setup |
-| **Doctor** | `doctor.sarah@medipredict.com` | `Doctor@12345` | Appointment queue, clinical encounters, EHR vitals, digital prescription, lab ordering |
-| **Patient** | `john.doe@example.com` | `Patient@12345` | Appointment booking, symptom risk prediction, digital Rx viewing/printing, lab report downloads |
+<!-- Copy the demo credentials table from your old README here -->
 
----
+</details>
 
-## 📖 B.Tech Final Year Viva & Architecture Guide
+## 🔐 Security
 
-### 1. Database ER Relationship Explanation
-- **User Model**: Primary identity table storing credentials, password hash (`bcrypt`), and role enum (`admin`, `doctor`, `patient`).
-- **Patient & Doctor Models**: 1-to-1 extension references to `User`. Doctor belongs to a `Department`.
-- **Appointment Model**: Relates `Patient`, `Doctor`, and `Department`. Uses compound indexing (`{ doctor: 1, appointmentDate: 1, timeSlot: 1 }`) for instant double-booking checks.
-- **Medical Record & Prescription**: Linked to `Patient`, `Doctor`, and optionally `Appointment`.
+- Passwords hashed with **bcrypt**
+- **JWT** authentication with role checks on protected routes
+- **Helmet** headers and **rate limiting**
+- Input validation on server-side routes
 
-### 2. Modular ML Engine Design
-The prediction service (`server/services/predictionService.js`) exposes `predictDisease(symptomsSelected)`. It processes input vectors against weighted symptom matrices. To swap in a real Python Scikit-Learn/TensorFlow model:
-1. Update `predictDisease()` to send an HTTP POST request to an external Python FastAPI endpoint (`http://localhost:8000/predict`).
-2. Maintain the return payload schema (`condition`, `riskScore`, `matchedSymptoms`, `explanation`).
-3. No changes will be required in the controller or frontend components!
+## 📁 Project Structure
 
----
+<details>
+<summary>Click to expand</summary>
 
-## 🛠️ Troubleshooting & Common Fixes
+<br/>
 
-1. **MongoDB Connection Refused**:
-   - Ensure local MongoDB service is started (`net start MongoDB` on Windows or `mongod`).
-   - Check `MONGO_URI` in `server/.env`.
-2. **Cloudinary Upload Warning**:
-   - If Cloudinary keys are empty in `.env`, the system automatically falls back to local disk storage (`server/uploads/`). Uploaded files will serve cleanly over HTTP.
-3. **CORS Error**:
-   - Verify `CLIENT_URL` in `server/.env` matches `http://localhost:5173`.
+<!-- Paste your existing folder tree here -->
+
+</details>
+
+## 📚 Extra Documentation
+
+- [Architecture & Viva Notes](docs/VIVA_GUIDE.md) — design decisions explained for academic review
+
+## 👨‍💻 Author
+
+**Pranshu Mishra** · B.Tech CSE, SRMU Lucknow
+
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-0A66C2?style=flat-square&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/pranshu-mishra-386873322)
+[![GitHub](https://img.shields.io/badge/GitHub-181717?style=flat-square&logo=github&logoColor=white)](https://github.com/mishrapranshu9161)
+
+⭐ If you found this useful, consider giving it a star.
